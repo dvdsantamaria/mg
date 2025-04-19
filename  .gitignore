@@ -1,0 +1,32 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.idea/
+*.env
+
+# macOS metadata
+.DS_Store
+
+# Logs
+*.log
+
+# Flask-related
+instance/
+.webassets-cache
+
+# Configs or secrets (si los tenés localmente)
+.env
+config.py
+
+# VSCode
+.vscode/
+
+# Railway build files (opcional)
+railway.json
