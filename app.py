@@ -24,6 +24,7 @@ def unlock():
         logging.info(f"Probando región: {region_code}")
         config = SaicApiConfiguration(username=USERNAME, password=PASSWORD, region=region_code)
         saic_api = SaicApi(config)
+        saic_api._auth.BASE_URL = "https://tap-au.soimt.com" 
         await saic_api.login()
         vehicles = await saic_api.vehicle_list()
         vin = vehicles.vinList[0].vin
