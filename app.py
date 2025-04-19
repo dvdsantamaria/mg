@@ -12,7 +12,7 @@ PASSWORD = os.getenv("MG_PASSWORD")
 
 @app.route("/", methods=["GET"])
 def home():
-    return "✅ MG API AU lista - /unlock disponible"
+    return "✅ MG Unlock API AU corriendo"
 
 @app.route("/unlock", methods=["GET"])
 def unlock():
@@ -21,16 +21,17 @@ def unlock():
         await client.login()
         vehicle = await client.get_vehicle_list()
         vin = vehicle["vin"]
-        unlock_result = await client.unlock_vehicle(vin)
+        result = await client.unlock_vehicle(vin)
         return {
             "vin": vin,
-            "result": unlock_result
+            "unlock_result": result
         }
 
     try:
         result = asyncio.run(process())
         return jsonify(result), 200
     except Exception as e:
+        logging.error(f"❌ Error: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":

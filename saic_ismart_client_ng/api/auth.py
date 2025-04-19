@@ -16,13 +16,18 @@ class MGClientAU:
             "password": self.password,
             "clientType": 1,
             "loginType": 0,
-            "appVersion": "1.0.0",
+            "appVersion": "5.3.0",
             "osVersion": "iOS 16.0",
             "deviceType": "iPhone15,3"
         }
         headers = {
             "Content-Type": "application/json",
-            "User-Agent": "okhttp/3.14.9"
+            "User-Agent": "MGApp/5.3.0 (iPhone; iOS 16.0; Scale/3.00)",
+            "Connection": "keep-alive",
+            "Accept": "*/*",
+            "Accept-Encoding": "gzip, deflate, br",
+            "platform": "ios",
+            "appId": "10001"
         }
 
         logging.info(f"POST {url}")
@@ -42,10 +47,8 @@ class MGClientAU:
         res = await self.client.get(url, headers=headers)
         res.raise_for_status()
         data = res.json()
-
         if not data.get("data"):
             raise Exception("No vehicle found")
-
         return data["data"][0]
 
     async def unlock_vehicle(self, vin):
