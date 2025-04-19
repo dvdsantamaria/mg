@@ -2,7 +2,7 @@ from flask import Flask, jsonify
 import os
 import asyncio
 import logging
-from saic_ismart_client_ng.api.auth import Auth
+from saic_ismart_client_ng.api.auth import MGClientAU
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -12,13 +12,24 @@ PASSWORD = os.getenv("MG_PASSWORD")
 
 @app.route("/", methods=["GET"])
 def home():
-    return "✅ MG Unlock API con endpoint AU"
+    return "✅ MG API AU lista - /unlock disponible"
 
 @app.route("/unlock", methods=["GET"])
 def unlock():
+    async def process():
+        client = MGClientAU(USERNAME, PASSWORD)
+        await client.login()
+        vehicle = await client.get_vehicle_list()
+        vin = vehicle["vin"]
+        unlock_result = await client.unlock_vehicle(vin)
+        return {
+            "vin": vin,
+            "result": unlock_result
+        }
+
     try:
-        auth = Auth(region="AU")
-        return jsonify({"login_url": auth.login_url(), "status": "Auth preparado"}), 200
+        result = asyncio.run(process())
+        return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
