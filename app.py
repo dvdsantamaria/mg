@@ -1,65 +1,40 @@
 from flask import Flask, jsonify
-import requests
 import os
+import asyncio
+import logging
+from saic_ismart_client_ng import SaicApi
+from saic_ismart_client_ng.model import SaicApiConfiguration
 
 app = Flask(__name__)
 
-MG_EMAIL = os.getenv("MG_EMAIL")
-MG_PASSWORD = os.getenv("MG_PASSWORD")
-MG_VIN = os.getenv("MG_VIN")
+# Variables de entorno
+USERNAME = os.getenv("MG_USERNAME")
+PASSWORD = os.getenv("MG_PASSWORD")
 
-LOGIN_URL = "https://eu-ccapi.gwm-cloud.com/api/auth/login"
-BASE_API_URL = "https://eu-ccapi.gwm-cloud.com/api/vehicle"
-HEADERS = {
-    "Content-Type": "application/json",
-    "User-Agent": "mgapp/5.7.0 (iOS 16.1)",
-}
+# Logging
+logging.basicConfig(level=logging.INFO)
 
+@app.route("/", methods=["GET"])
+def root():
+    return "✅ MG Unlock API está corriendo"
 
-def get_token():
-    login_payload = {
-        "userAccount": MG_EMAIL,
-        "password": MG_PASSWORD,
-        "loginType": 0,
-        "clientId": "client-id-placeholder",
-        "deviceId": "device-id-placeholder",
-        "appVersion": "5.7.0",
-        "osType": "iOS",
-        "osVersion": "16.1",
-        "lang": "en"
-    }
-    login_response = requests.post(LOGIN_URL, json=login_payload, headers=HEADERS)
-    login_response.raise_for_status()
-    return login_response.json().get("accessToken")
+@app.route("/unlock", methods=["GET"])
+def unlock():
+    async def unlock_vehicle():
+        config = SaicApiConfiguration(username=USERNAME, password=PASSWORD)
+        saic_api = SaicApi(config)
+        await saic_api.login()
+        vehicles = await saic_api.vehicle_list()
+        vin = vehicles.vinList[0].vin
+        await saic_api.unlock_vehicle(vin)
+        return {"status": "Vehículo desbloqueado", "vin": vin}
 
-
-@app.route("/open-car", methods=["GET"])
-def open_car():
     try:
-        token = get_token()
-        headers = HEADERS.copy()
-        headers["Authorization"] = f"Bearer {token}"
-        payload = {"vin": MG_VIN, "deviceType": 1}
-        response = requests.post(f"{BASE_API_URL}/unlock", json=payload, headers=headers)
-        response.raise_for_status()
-        return jsonify({"status": "Car unlocked successfully"})
+        result = asyncio.run(unlock_vehicle())
+        return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
-@app.route("/lock-car", methods=["GET"])
-def lock_car():
-    try:
-        token = get_token()
-        headers = HEADERS.copy()
-        headers["Authorization"] = f"Bearer {token}"
-        payload = {"vin": MG_VIN, "deviceType": 1}
-        response = requests.post(f"{BASE_API_URL}/lock", json=payload, headers=headers)
-        response.raise_for_status()
-        return jsonify({"status": "Car locked successfully"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
